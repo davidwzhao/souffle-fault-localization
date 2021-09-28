@@ -1,0 +1,3 @@
+insert edge(4, 5)
+remove edge(2, 4)
+commit
