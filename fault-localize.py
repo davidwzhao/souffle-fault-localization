@@ -39,7 +39,17 @@ def localize_faults(souffle_instance, update_file, faults):
 
     return localization
 
-if __name__ == '__main__':
+def flip_insert_remove(t):
+    res = t
+    if t.endswith("(-)") or t.endswith("(+)"):
+        if t[-2] == '+':
+            res = t[:-2] + '-)'
+        elif t[-2] == '-':
+            res = t[:-2] + '+)'
+
+    return res
+
+def main():
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
 
     # set up reverse souffle instance
@@ -80,7 +90,10 @@ if __name__ == '__main__':
 
         localizations -= set([l for l in localizations if l[0] == '!'])
 
-        localizations.update(localize_faults(reverse_souffle_instance, 'update_reverse.in', reverse_faults))
+        ls_reverse = localize_faults(reverse_souffle_instance, 'update_reverse.in', reverse_faults)
+        ls_reverse = set(map(flip_insert_remove, ls_reverse))
+        localizations.update(ls_reverse)
+
         reverse_faults = []
 
         # check for any negations
@@ -89,4 +102,17 @@ if __name__ == '__main__':
                 tup = l[1:].removesuffix(' (-)').removesuffix(' (+)')
                 faults.append(tup)
 
+        localizations -= set([l for l in localizations if l[0] == '!'])
+
+        # flip reverse_souffle_instance and souffle_instance, since now the
+        # forwards and backwards directions are opposite after applying the
+        # respective diffs
+        tmp = souffle_instance
+        souffle_instance = reverse_souffle_instance
+        reverse_souffle_instance = tmp
+
     print(localizations)
+
+
+if __name__ == '__main__':
+    main()
