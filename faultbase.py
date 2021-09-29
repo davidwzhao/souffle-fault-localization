@@ -198,7 +198,6 @@ def getOneTreeFromProvJson(provenance):
 
     return res
 
-
 # def cleanProvenanceJson(provenance):
 #     provenance = provenance['proof']
 # 
