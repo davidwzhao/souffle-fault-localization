@@ -183,6 +183,9 @@ def parseSouffleTuple(string):
 ########################################################################################################################
 # Souffle provenance functions
 
+def isDiff(s):
+    return s.endswith('(+)') or s.endswith('(-)')
+
 def getOneProv(souffle, tupleStr):
     startTime = time.time()
     p = execSouffleCmd(souffle, 'explainall ' + tupleStr)
@@ -201,9 +204,6 @@ def getOneProv(souffle, tupleStr):
 # 
 #     return tuples
 
-def isDiff(s):
-    return s.endswith('(+)') or s.endswith('(-)')
-
 def getOneTreeFromProvJson(provenance):
     provenance = provenance['proof']
 
@@ -220,6 +220,57 @@ def getOneTreeFromProvJson(provenance):
     res = list(filter(isDiff, res))
 
     return res
+
+def getAllProv(souffle, tupleStr):
+    startTime = time.time()
+    p = execSouffleCmd(souffle, 'explainall ' + tupleStr)
+    p = json.loads(p)
+    tuples = getAllTreesFromProvJson(p)
+
+    endTime = time.time()
+    logTime('getAllProv', endTime - startTime)
+
+    return tuples
+
+def getAllTreesFromProvJson(provenance):
+    provenance = provenance['proof']
+    allTrees = []
+
+    def getAllTreesFromProvJsonInt(p, so_far):
+        if 'axiom' in p:
+            # we are at a leaf, add all the EDB tuples in the tree thus far
+            allTrees.append(list(filter(isDiff, so_far)))
+
+        childNum = 0
+
+        while 'children_' + str(childNum) in p:
+            c = 'children_' + str(childNum)
+
+            axioms = []
+
+            # if the current node has premises, we are not at a leaf
+            hasPremises = False
+            for child in p[c]:
+                if 'axiom' in child:
+                    axioms.append(child['axiom'])
+                if 'premises' in child:
+                    hasPremises = True
+
+            if not hasPremises and len(p[c]) > 0:
+                # just want to go to the first axiom
+                getAllTreesFromProvJsonInt(p[c][0], so_far + axioms)
+
+            for child in p[c]:
+                if 'axiom' in child:
+                    continue
+                getAllTreesFromProvJsonInt(child, so_far + axioms)
+
+            childNum += 1
+
+    res = getAllTreesFromProvJsonInt(provenance, [])
+
+
+    return allTrees
 
 # def cleanProvenanceJson(provenance):
 #     provenance = provenance['proof']
