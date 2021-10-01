@@ -5,6 +5,3 @@ insert edge(4, 5)
 insert edge(5, 3)
 insert edge(1, 5)
 commit
-format json
-setdepth 10000
-explainall path(0, 3)
