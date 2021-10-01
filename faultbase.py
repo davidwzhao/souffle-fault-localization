@@ -267,8 +267,7 @@ def getAllTreesFromProvJson(provenance):
 
             childNum += 1
 
-    res = getAllTreesFromProvJsonInt(provenance, [])
-
+    getAllTreesFromProvJsonInt(provenance, [])
 
     return allTrees
 
