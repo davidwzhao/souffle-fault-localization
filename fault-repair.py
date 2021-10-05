@@ -132,14 +132,6 @@ def replace_negations_with_trees(trees, negation_trees):
 
 
 def main():
-    # trees = {'path(0, 3)': [['edge(1, 2) (+)', 'edge(2, 3) (+)'], ['edge(1, 5) (+)', 'edge(5, 3) (+)'], ['edge(0, 4) (+)', 'edge(4, 5) (+)', 'edge(5, 3) (+)']], 'path2(0, 3)': [['edge(1, 2) (+)', 'edge(2, 3) (+)'], ['edge(1, 5) (+)', 'edge(5, 3) (+)'], ['edge(0, 4) (+)', '!edge(4, 5) (+)', '!edge(5, 3) (+)']]}
-
-    # negation_trees = {'edge(5, 3)': [['asdf', 'asdfer'], ['hello']], 'edge(4, 5)': [['edgeasdf'], ['what is this']]}
-
-    # replace_negations_with_trees(trees, negation_trees)
-
-    # exit(0)
-
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query", "facts")
 
     # set up reverse souffle instance
@@ -164,23 +156,18 @@ def main():
             if kind == 'missing':
                 reverse_faults.append(tup)
 
-    # initialize things
-    # first do positive faults
+    # initialize souffle instance updates
     apply_update(souffle_instance, 'update.in')
     apply_update(reverse_souffle_instance, 'update_reverse.in')
-
-    # get trees
-    # trees = get_all_trees(souffle_instance, faults)
-    # trees.update(get_all_trees(reverse_souffle_instance, reverse_faults))
 
     trees = {}
 
     # reset faults, as they are all processed so far
-    # faults = []
     negations = set()
 
     while len(faults) > 0 or len(reverse_faults) > 0:
 
+        # process positive faults
         fault_trees = get_all_trees(souffle_instance, faults)
         trees = replace_negations_with_trees(trees, {k: fault_trees[k] for k in negations})
         trees.update({k: fault_trees[k] for k in fault_trees.keys() if k not in negations})
@@ -213,19 +200,12 @@ def main():
                         faults.append(tup)
                         negations.add(tup)
 
-
-    print(trees)
-
     flattened_trees = [t for key in trees for t in trees[key]]
 
     msc = construct_minimum_set_cover(flattened_trees)
     repair = solve_minimum_set_cover(flattened_trees, msc)
 
     print(repair)
-
-
-
-
 
 if __name__ == '__main__':
     main()
