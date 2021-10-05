@@ -179,6 +179,12 @@ def parseSouffleTuple(string):
     endTime = time.time()
     return ans
 
+def apply_update(souffle_instance, update_file):
+    with open(update_file, 'r') as update_file:
+        for l in update_file:
+            l = l.rstrip()
+            execSouffleCmd(souffle_instance, l)
+
 
 ########################################################################################################################
 # Souffle provenance functions
@@ -300,3 +306,19 @@ def collectRules(provenance):
     else:
         return frozenset({ ruleName for child in provenance['children'] \
                                     for ruleName in collectRules(child) })
+
+########################################################################################################################
+# Various tuple processing functions
+
+def remove_diff_suffix(t):
+    return t.removesuffix(' (-)').removesuffix(' (+)')
+
+def flip_insert_remove(t):
+    res = t
+    if t.endswith("(-)") or t.endswith("(+)"):
+        if t[-2] == '+':
+            res = t[:-2] + '-)'
+        elif t[-2] == '-':
+            res = t[:-2] + '+)'
+
+    return res

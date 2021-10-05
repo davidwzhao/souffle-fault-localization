@@ -80,25 +80,6 @@ def get_all_trees(souffle_instance, faults):
 
     return trees
 
-def apply_update(souffle_instance, update_file):
-    with open(os.path.join(problem_dir, update_file), 'r') as update_file:
-        for l in update_file:
-            l = l.rstrip()
-            faultbase.execSouffleCmd(souffle_instance, l)
-
-def remove_diff_suffix(s):
-    return s.removesuffix(' (-)').removesuffix(' (+)')
-
-def flip_insert_remove(t):
-    res = t
-    if t.endswith("(-)") or t.endswith("(+)"):
-        if t[-2] == '+':
-            res = t[:-2] + '-)'
-        elif t[-2] == '-':
-            res = t[:-2] + '+)'
-
-    return res
-
 def replace_negations_with_trees(trees, negation_trees):
 
     result = collections.defaultdict(list)
@@ -109,12 +90,12 @@ def replace_negations_with_trees(trees, negation_trees):
         changed = False
         for (idx, leaf) in enumerate(tree):
             if leaf[0] == '!':
-                tup = remove_diff_suffix(leaf[1:])
+                tup = faultbase.remove_diff_suffix(leaf[1:])
 
                 if tup in negation_trees:
                     changed = True
                     for n in negation_trees[tup]:
-                        res.append(tree[:idx] + list(map(flip_insert_remove, n)) + tree[idx+1:])
+                        res.append(tree[:idx] + n + tree[idx+1:])
                 break
 
         if changed:
@@ -130,6 +111,13 @@ def replace_negations_with_trees(trees, negation_trees):
 
     return dict(result)
 
+def flip_insert_remove_trees(trees):
+    for key_tup in trees:
+        for tree in trees[key_tup]:
+            for i in range(len(tree)):
+                tree[i] = faultbase.flip_insert_remove(tree[i])
+
+    return trees
 
 def main():
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query", "facts")
@@ -157,8 +145,8 @@ def main():
                 reverse_faults.append(tup)
 
     # initialize souffle instance updates
-    apply_update(souffle_instance, 'update.in')
-    apply_update(reverse_souffle_instance, 'update_reverse.in')
+    faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
+    faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
 
     trees = {}
 
@@ -180,11 +168,12 @@ def main():
             for tree in ts:
                 for t in tree:
                     if t[0] == '!':
-                        tup = remove_diff_suffix(t[1:])
+                        tup = faultbase.remove_diff_suffix(t[1:])
                         reverse_faults.append(tup)
                         negations.add(tup)
 
         reverse_fault_trees = get_all_trees(reverse_souffle_instance, reverse_faults)
+        reverse_fault_trees = flip_insert_remove_trees(reverse_fault_trees)
         trees = replace_negations_with_trees(trees, {k: reverse_fault_trees[k] for k in negations})
         trees.update({k: reverse_fault_trees[k] for k in reverse_fault_trees.keys() if k not in negations})
 
@@ -196,7 +185,7 @@ def main():
             for tree in ts:
                 for t in tree:
                     if t[0] == '!':
-                        tup = remove_diff_suffix(t[1:])
+                        tup = faultbase.remove_diff_suffix(t[1:])
                         faults.append(tup)
                         negations.add(tup)
 
