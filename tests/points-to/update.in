@@ -1,0 +1,2 @@
+insert load("userSession", "admin", "session")
+commit

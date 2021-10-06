@@ -1,0 +1,26 @@
+.type Var = symbol
+.type Obj = symbol
+.type Field = symbol
+
+.decl vpt, new(var: Var, obj: Obj)
+.decl assign, alias(var1: Var, var2: Var)
+.decl load(to: Var, from: Var, field: Field)
+.decl store(from: Var, field: Field, to: Var)
+
+.input new, assign, load, store
+.output vpt, alias
+
+vpt(Var, Obj) :- new(Var, Obj).
+
+vpt(Var, Obj) :- assign(Var, Var2),
+                 vpt(Var2, Obj).
+                   
+vpt(Var, Obj) :- load(Var, Inter, F),
+                 store(Inter2, F, Var2),
+                 vpt(Var2, Obj),
+                 vpt(Inter, InterObj),
+                 vpt(Inter2, InterObj).
+                   
+alias(Var1, Var2) :- vpt(Var1, Obj),
+                     vpt(Var2, Obj),
+                     Var1 != Var2.
