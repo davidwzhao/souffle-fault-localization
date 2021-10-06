@@ -30,3 +30,13 @@ diff that localizes the fault:
 $ python3 fault-localize.py tests/path
 {'unwanted_edge(1, 3) (+)', 'unwanted_edge(2, 3) (-)'}
 ```
+
+### Fault repair
+
+The fault repair script functions in much the same way as the fault localization
+script. It expects the same set of files in the problem directory, and is
+executed the same way.
+
+The result of the repair script is a set of tuples that potentially repairs the
+faults, i.e., if those tuples are removed from the diff, then the faults
+disappear.
