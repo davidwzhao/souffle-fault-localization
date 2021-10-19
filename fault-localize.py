@@ -20,10 +20,6 @@ problem_dir = sys.argv[1]
 # - give incremental update
 # - read fault tuples and compute provenance
 
-# localize one fault
-def localize_fault(souffle_instance, fault):
-    return faultbase.getOneProv(souffle_instance, fault)
-
 # localize a set of faults from faults_file
 def localize_faults(souffle_instance, faults):
     localization = set()
@@ -33,33 +29,7 @@ def localize_faults(souffle_instance, faults):
 
     return localization
 
-def main():
-    souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
-
-    # set up reverse souffle instance
-    faultbase.applyDiffToInput(problem_dir, 'update.in', 'facts', 'facts_reverse')
-    faultbase.reverseDiff(problem_dir, 'update.in', 'update_reverse.in')
-
-    reverse_souffle_instance = faultbase.initIncSouffle(problem_dir, "query", 'facts_reverse')
-
-    # initialize souffle instance updates
-    faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
-    faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
-
-    # get faults
-    faults = []
-    reverse_faults = []
-    with open(os.path.join(problem_dir, 'faults.txt'), 'r') as faults_file:
-        for l in faults_file:
-            l = l.rstrip()
-
-            (kind, tup) = tuple(l.split(' ', maxsplit=1))
-
-            if kind == 'existing':
-                faults.append(tup)
-
-            if kind == 'missing':
-                reverse_faults.append(tup)
+def localize_all_faults(problem_dir, souffle_instance, reverse_souffle_instance, faults, reverse_faults):
 
     # now do the localization algo!
     localizations = set()
@@ -92,8 +62,40 @@ def main():
 
         localizations -= set([l for l in localizations if l[0] == '!'])
 
-    print(localizations)
+    return localizations
 
+def main():
+    souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
+
+    # set up reverse souffle instance
+    faultbase.applyDiffToInput(problem_dir, 'update.in', 'facts', 'facts_reverse')
+    faultbase.reverseDiff(problem_dir, 'update.in', 'update_reverse.in')
+
+    reverse_souffle_instance = faultbase.initIncSouffle(problem_dir, "query", 'facts_reverse')
+
+    # initialize souffle instance updates
+    faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
+    faultbase.execSouffleCmd(souffle_instance, 'storediffs')
+
+    faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
+    faultbase.execSouffleCmd(reverse_souffle_instance, 'storediffs')
+
+    # get faults
+    faults = []
+    reverse_faults = []
+    with open(os.path.join(problem_dir, 'faults.txt'), 'r') as faults_file:
+        for l in faults_file:
+            l = l.rstrip()
+
+            (kind, tup) = tuple(l.split(' ', maxsplit=1))
+
+            if kind == 'existing':
+                faults.append(tup)
+
+            if kind == 'missing':
+                reverse_faults.append(tup)
+
+    return localize_all_faults(problem_dir, souffle_instance, reverse_souffle_instance, faults, reverse_faults)
 
 if __name__ == '__main__':
-    main()
+    print(main())
