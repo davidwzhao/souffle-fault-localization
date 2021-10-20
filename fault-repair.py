@@ -119,40 +119,11 @@ def flip_insert_remove_trees(trees):
 
     return trees
 
-def main():
-    souffle_instance = faultbase.initIncSouffle(problem_dir, "query", "facts")
-
-    # set up reverse souffle instance
-    faultbase.applyDiffToInput(problem_dir, 'update.in', 'facts', 'facts_reverse')
-    faultbase.reverseDiff(problem_dir, 'update.in', 'update_reverse.in')
-
-    reverse_souffle_instance = faultbase.initIncSouffle(problem_dir, "query", 'facts_reverse')
-
-    # get faults
-    faults = []
-    reverse_faults = []
-
-    with open(os.path.join(problem_dir, 'faults.txt'), 'r') as faults_file:
-        for l in faults_file:
-            l = l.rstrip()
-
-            (kind, tup) = tuple(l.split(' ', maxsplit=1))
-
-            if kind == 'existing':
-                faults.append(tup)
-
-            if kind == 'missing':
-                reverse_faults.append(tup)
-
-    # initialize souffle instance updates
-    faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
-    faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
-
+def repair_all_faults(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
     trees = {}
 
     # reset faults, as they are all processed so far
     negations = set()
-
     while len(faults) > 0 or len(reverse_faults) > 0:
 
         # process positive faults
@@ -194,7 +165,41 @@ def main():
     msc = construct_minimum_set_cover(flattened_trees)
     repair = solve_minimum_set_cover(flattened_trees, msc)
 
-    print(repair)
+    return repair
+
+def main():
+    souffle_instance = faultbase.initIncSouffle(problem_dir, "query", "facts")
+
+    # set up reverse souffle instance
+    faultbase.applyDiffToInput(problem_dir, 'update.in', 'facts', 'facts_reverse')
+    faultbase.reverseDiff(problem_dir, 'update.in', 'update_reverse.in')
+
+    reverse_souffle_instance = faultbase.initIncSouffle(problem_dir, "query", 'facts_reverse')
+
+    # get faults
+    faults = []
+    reverse_faults = []
+
+    with open(os.path.join(problem_dir, 'faults.txt'), 'r') as faults_file:
+        for l in faults_file:
+            l = l.rstrip()
+
+            (kind, tup) = tuple(l.split(' ', maxsplit=1))
+
+            if kind == 'existing':
+                faults.append(tup)
+
+            if kind == 'missing':
+                reverse_faults.append(tup)
+
+    # initialize souffle instance updates
+    faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
+    faultbase.execSouffleCmd(souffle_instance, 'storediffs')
+
+    faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
+    faultbase.execSouffleCmd(reverse_souffle_instance, 'storediffs')
+
+    return repair_all_faults(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
 
 if __name__ == '__main__':
-    main()
+    print(main())
