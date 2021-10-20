@@ -8,9 +8,6 @@ import collections
 import os
 import sys
 
-# Get input problem directory name
-problem_dir = sys.argv[1]
-
 # The problem directory should contain:
 # 1. query - the incremental souffle executable
 # 2. facts/<relation>.facts - the inputs for each relation
@@ -63,7 +60,7 @@ def solve_minimum_set_cover(trees, set_cover_problem):
 
     return tuples
 
-def repair_faults(souffle_instance, update_file, faults):
+def repair_faults(souffle_instance, faults):
     repair = set()
 
     trees = []
@@ -168,6 +165,9 @@ def repair_all_faults(souffle_instance, reverse_souffle_instance, faults, revers
     return repair
 
 def main():
+    # Get input problem directory name
+    problem_dir = sys.argv[1]
+
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query", "facts")
 
     # set up reverse souffle instance

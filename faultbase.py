@@ -44,6 +44,13 @@ def printTimers():
 import atexit
 atexit.register(printTimers)
 
+def remove_suffix(self: str, suffix: str) -> str:
+    # suffix='' should not call self[:-0].
+    if suffix and self.endswith(suffix):
+        return self[:-len(suffix)]
+    else:
+        return self[:]
+
 ########################################################################################################################
 # Tuple input/output utilities
 
@@ -88,7 +95,7 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
 
     # copy all files that do not have a diff
     for file in os.listdir(os.path.join(problemDirName, inputFactsFolder)):
-        if file.removesuffix('.facts') in toInsert.keys() | toDelete.keys():
+        if remove_suffix(file, '.facts') in toInsert.keys() | toDelete.keys():
             continue
         else:
             shutil.copyfile(os.path.join(problemDirName, inputFactsFolder, file), os.path.join(problemDirName, outputFactsFolder, file))
@@ -318,7 +325,9 @@ def collectRules(provenance):
 # Various tuple processing functions
 
 def remove_diff_suffix(t):
-    return t.removesuffix(' (-)').removesuffix(' (+)')
+    t = remove_suffix(t, ' (-)')
+    t = remove_suffix(t, ' (+)')
+    return t
 
 def flip_insert_remove(t):
     res = t

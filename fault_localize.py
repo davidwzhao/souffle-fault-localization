@@ -6,9 +6,6 @@ import sys
 import os
 import faultbase
 
-# Get input problem directory name
-problem_dir = sys.argv[1]
-
 # The problem directory should contain:
 # 1. query - the incremental souffle executable
 # 2. facts/<relation>.facts - the inputs for each relation
@@ -65,6 +62,9 @@ def localize_all_faults(problem_dir, souffle_instance, reverse_souffle_instance,
     return localizations
 
 def main():
+    # Get input problem directory name
+    problem_dir = sys.argv[1]
+
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
 
     # set up reverse souffle instance
