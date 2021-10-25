@@ -42,6 +42,9 @@ def solve_minimum_set_cover(trees, set_cover_problem):
     covered = [False for t in trees]
     tuples = []
 
+    if len(set_cover_problem) == 0:
+        return []
+
     while not all(covered):
         # take max number of covered elements
         m = max(set_cover_problem.items(), key=(lambda x: len(x[1])))
