@@ -77,9 +77,21 @@ def repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
 
     return repairs
 
+def get_excluded_tuples():
+    excluded_tuples = []
+    while True:
+        try:
+            current_tuple = input("input a tuple to exclude > ")
+            excluded_tuples.append(current_tuple)
+        except EOFError:
+            break
+
+    return excluded_tuples
+
 def main():
     mode = sys.argv[1]
     problem_dir = sys.argv[2]
+    allow_user_interaction = len(sys.argv) > 3 and sys.argv[3] == '1'
 
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
 
@@ -112,7 +124,6 @@ def main():
                 reverse_faults.append(tup)
 
     print("faults: ", faults, ", reverse_faults: ", reverse_faults)
-
     
     result = set()
     if mode == 'localize':
@@ -121,6 +132,41 @@ def main():
         result = repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
     else:
         print("Mode is 'localize' or 'repair'")
+
+    print(result)
+
+    # Enable user interaction - the user can specify some set of tuples to
+    # exclude from the given result
+    if allow_user_interaction:
+        while True:
+            excluded_tuples = get_excluded_tuples()
+            if len(excluded_tuples) == 0:
+                break
+
+            for t in excluded_tuples:
+                for r in result:
+                    if t.replace(" ", "") in r.replace(" ", ""):
+                        if r.endswith("(-)"):
+                            # this tuple was originally deleted from the diff, so we
+                            # should insert into souffle_instance, and delete from
+                            # reverse_souffle_instance
+                            faultbase.execSouffleCmd(souffle_instance, 'insert ' + t)
+                            faultbase.execSouffleCmd(reverse_souffle_instance, 'remove ' + t)
+
+                        elif r.endswith("(+)"):
+                            faultbase.execSouffleCmd(souffle_instance, 'remove ' + t)
+                            faultbase.execSouffleCmd(reverse_souffle_instance, 'insert ' + t)
+
+                        break
+
+            faultbase.execSouffleCmd(souffle_instance, 'commit')
+            faultbase.execSouffleCmd(reverse_souffle_instance, 'commit')
+
+            # redo localization/repair!
+            if mode == 'localize':
+                result = localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
+            elif mode == 'repair':
+                result = repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
 
     return result
 
