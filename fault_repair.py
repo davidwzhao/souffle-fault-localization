@@ -7,6 +7,7 @@ import faultbase
 import collections
 import os
 import sys
+import pulp as pl
 
 # The problem directory should contain:
 # 1. query - the incremental souffle executable
@@ -39,29 +40,71 @@ def solve_minimum_set_cover(trees, set_cover_problem):
     # a very simple greedy algorithm that gives a ln(n) approximation (or
     # something like that)
 
-    covered = [False for t in trees]
-    tuples = []
-
+    # ILP SOLUTION STARTS HERE
     if len(set_cover_problem) == 0:
         return []
 
-    while not all(covered):
-        # take max number of covered elements
-        m = max(set_cover_problem.items(), key=(lambda x: len(x[1])))
+    set_cover_ilp = pl.LpProblem("Set Cover", pl.LpMinimize)
+    tuples = pl.LpVariable.dicts("tuples", set_cover_problem.keys(), cat='Integer')
 
-        # remove m from set_cover_problem
-        set_cover_problem.pop(m[0])
+    for tup in set_cover_problem.keys():
+        tuples[tup].bounds(0, 1)
 
-        # invalidate trees covered by m
-        for t in m[1]:
-            covered[t] = True
+    # objective function
+    set_cover_ilp += sum([tuples[tup] for tup in set_cover_problem.keys()])
 
-            for tup in trees[t]:
-                set_cover_problem[tup].discard(t)
+    # constraints that every tree must be covered
+    for (idx, _) in enumerate(trees):
+        set_cover_ilp += pl.lpSum([tuples[tup] for tup in set_cover_problem.keys() if idx in set_cover_problem[tup]]) >= 1
 
-        tuples.append(m[0])
+    # solve
+    set_cover_ilp.solve(pl.apis.COIN_CMD(logPath=""))
 
-    return tuples
+    # get result
+    selected_tuples = []
+
+    for tup in set_cover_problem.keys():
+        if tuples[tup].varValue == 1:
+            selected_tuples.append(tup)
+
+    return selected_tuples
+
+    # APPROXIMATION SOLUTION STARTS HERE
+    # if len(set_cover_problem) == 0:
+    #     return []
+
+    # covered = [False for t in trees]
+    # tuples = []
+
+    # while not all(covered):
+    #     # take max number of covered elements
+    #     m = max(set_cover_problem.items(), key=(lambda x: len(x[1])))
+
+    #     # remove m from set_cover_problem
+    #     set_cover_problem.pop(m[0])
+
+    #     # invalidate trees covered by m
+    #     for t in m[1]:
+    #         covered[t] = True
+
+    #         for tup in trees[t]:
+    #             # print("discarding", t, "from", tup)
+    #             set_cover_problem[tup].discard(t)
+
+    #     # print("covered:", len(covered))
+
+    #     # print("set cover problem:", set_cover_problem)
+
+    #     uncovered = []
+    #     for (idx, c) in enumerate(covered):
+    #         if c == False:
+    #             uncovered.append(idx)
+
+    #     # print(uncovered)
+
+    #     tuples.append(m[0])
+
+    # return tuples
 
 def repair_faults(souffle_instance, faults):
     repair = set()

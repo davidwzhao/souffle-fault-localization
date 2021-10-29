@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import subprocess
+import sympy
 import time
 
 ########################################################################################################################
@@ -256,40 +257,91 @@ def getAllTreesFromProvJson(provenance):
     provenance = provenance['proof']
     allTrees = []
 
-    def getAllTreesFromProvJsonInt(p, so_far):
+    def getAllTreesFromProvJsonInt(p):
         if 'axiom' in p:
-            # we are at a leaf, add all the EDB tuples in the tree thus far
-            allTrees.append(list(filter(isDiff, so_far)))
+            if isDiff(p['axiom']):
+                return sympy.Symbol(p['axiom'])
+            else:
+                return None
 
-        childNum = 0
+        # go through alternative children
+        cNum = 0
 
-        while 'children_' + str(childNum) in p:
-            c = 'children_' + str(childNum)
+        currentFormula = False
 
-            axioms = []
+        while 'children_' + str(cNum) in p:
+            c = 'children_' + str(cNum)
 
-            # if the current node has premises, we are not at a leaf
-            hasPremises = False
+            currentChildFormula = True
             for child in p[c]:
-                if 'axiom' in child:
-                    axioms.append(child['axiom'])
-                if 'premises' in child:
-                    hasPremises = True
+                childResult = getAllTreesFromProvJsonInt(child)
 
-            if not hasPremises and len(p[c]) > 0:
-                # just want to go to the first axiom
-                getAllTreesFromProvJsonInt(p[c][0], so_far + axioms)
+                if childResult != None:
+                    currentChildFormula = currentChildFormula & childResult
 
-            for child in p[c]:
-                if 'axiom' in child:
-                    continue
-                getAllTreesFromProvJsonInt(child, so_far + axioms)
+            if currentChildFormula != True:
+                currentFormula = currentFormula | currentChildFormula
 
-            childNum += 1
+            cNum += 1
 
-    getAllTreesFromProvJsonInt(provenance, [])
+        # print("current formula: ", currentFormula)
+
+        return currentFormula
+
+    def clauses(expr):    # for DNFs only
+        if not isinstance(expr, sympy.logic.boolalg.Or):
+            return [expr]
+        return list(expr.args)
+
+    treesFormula = getAllTreesFromProvJsonInt(provenance)
+
+    if treesFormula == None:
+        return []
+
+    treesFormula = sympy.logic.to_dnf(treesFormula)
+
+    for c in clauses(treesFormula):
+        if isinstance(c, sympy.core.symbol.Symbol):
+            allTrees.append([str(c)])
+        elif c != None:
+            allTrees.append(list(map(str, c.args)))
 
     return allTrees
+
+    # def getAllTreesFromProvJsonInt(p, so_far):
+    #     if 'axiom' in p:
+    #         # we are at a leaf, add all the EDB tuples in the tree thus far
+    #         allTrees.append(list(filter(isDiff, so_far)))
+
+    #     childNum = 0
+
+    #     while 'children_' + str(childNum) in p:
+    #         c = 'children_' + str(childNum)
+
+    #         axioms = []
+
+    #         # if the current node has premises, we are not at a leaf
+    #         hasPremises = False
+    #         for child in p[c]:
+    #             if 'axiom' in child:
+    #                 axioms.append(child['axiom'])
+    #             if 'premises' in child:
+    #                 hasPremises = True
+
+    #         if not hasPremises and len(p[c]) > 0:
+    #             # just want to go to the first axiom
+    #             getAllTreesFromProvJsonInt(p[c][0], so_far + axioms)
+
+    #         for child in p[c]:
+    #             if 'axiom' in child:
+    #                 continue
+    #             getAllTreesFromProvJsonInt(child, so_far + axioms)
+
+    #         childNum += 1
+
+    # getAllTreesFromProvJsonInt(provenance, [])
+
+    # return allTrees
 
 # def cleanProvenanceJson(provenance):
 #     provenance = provenance['proof']
