@@ -5,7 +5,7 @@ import sys
 
 import faultbase
 import fault_localize
-import fault_repair
+import fault_repair_ilp
 
 def localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
     # now do the localization algo!
@@ -26,7 +26,7 @@ def localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
         localizations -= set([l for l in localizations if l[0] == '!'])
 
         # for reverse faults, we have to do a repair
-        ls_reverse = fault_repair.repair_faults(reverse_souffle_instance, reverse_faults)
+        ls_reverse = fault_repair_ilp.repair_faults(reverse_souffle_instance, reverse_faults)
         ls_reverse = set(map(faultbase.flip_insert_remove, ls_reverse))
         localizations.update(ls_reverse)
 
@@ -47,7 +47,7 @@ def repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
     repairs = set()
 
     while len(faults) > 0 or len(reverse_faults) > 0:
-        repairs.update(fault_repair.repair_faults(souffle_instance, faults))
+        repairs.update(fault_repair_ilp.repair_faults(souffle_instance, faults))
 
         # now faults are processed, so reset faults
         faults = []

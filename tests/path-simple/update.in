@@ -1,0 +1,5 @@
+insert edge(2, 3)
+insert edge(0, 2)
+insert edge(3, 4)
+insert edge(4, 5)
+commit

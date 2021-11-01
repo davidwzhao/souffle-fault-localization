@@ -58,7 +58,7 @@ def solve_minimum_set_cover(trees, set_cover_problem):
         set_cover_ilp += pl.lpSum([tuples[tup] for tup in set_cover_problem.keys() if idx in set_cover_problem[tup]]) >= 1
 
     # solve
-    set_cover_ilp.solve(pl.apis.COIN_CMD(logPath=""))
+    set_cover_ilp.solve(pl.apis.PULP_CBC_CMD(logPath=""))
 
     # get result
     selected_tuples = []

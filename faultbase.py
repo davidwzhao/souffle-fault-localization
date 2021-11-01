@@ -244,8 +244,7 @@ def getOneTreeFromProvJson(provenance):
 
 def getAllProv(souffle, tupleStr):
     startTime = time.time()
-    p = execSouffleCmd(souffle, 'explainall ' + tupleStr)
-    p = json.loads(p)
+    p = getAllProvJson(souffle, tupleStr)
     tuples = getAllTreesFromProvJson(p)
 
     endTime = time.time()
@@ -253,8 +252,15 @@ def getAllProv(souffle, tupleStr):
 
     return tuples
 
+def getAllProvJson(souffle, tupleStr):
+    p = execSouffleCmd(souffle, 'explainall ' + tupleStr)
+    p = json.loads(p)
+    p = p['proof']
+
+    return p
+
 def getAllTreesFromProvJson(provenance):
-    provenance = provenance['proof']
+    # provenance = provenance['proof']
     allTrees = []
 
     def getAllTreesFromProvJsonInt(p):
