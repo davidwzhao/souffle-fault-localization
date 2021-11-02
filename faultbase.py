@@ -104,24 +104,28 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
     endTime = time.time()
     logTime('applyDiffToInput', endTime - startTime)
 
+def reverseDiffLine(line):
+    t = line.split(' ', maxsplit=1)
+
+    if t[0] == 'remove' or t[0] == 'insert':
+        # insert becomes remove and vice versa
+        (command, tup) = tuple(t)
+
+        if command == 'remove':
+            return 'insert ' + tup
+        elif command == 'insert':
+            return 'remove ' + tup
+
+    return line
+
+
 # this reverses an incremental diff
 def reverseDiff(problemDirName, diffFilename, outputDiffFilename):
     startTime = time.time()
     with open(os.path.join(problemDirName, diffFilename), 'r') as diffFile:
         with open(os.path.join(problemDirName, outputDiffFilename), 'w') as outputDiffFile:
             for l in diffFile:
-                t = l.split(' ', maxsplit=1)
-
-                if t[0] == 'remove' or t[0] == 'insert':
-                    # insert becomes remove and vice versa
-                    (command, tup) = tuple(t)
-
-                    if command == 'remove':
-                        outputDiffFile.write('insert ' + tup)
-                    elif command == 'insert':
-                        outputDiffFile.write('remove ' + tup)
-                else:
-                    outputDiffFile.write(l)
+                outputDiffFile.write(reverseDiffLine(l))
 
     endTime = time.time()
     logTime('reverseDiff', endTime - startTime)
