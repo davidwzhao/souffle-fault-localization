@@ -96,10 +96,11 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
 
     # copy all files that do not have a diff
     for file in os.listdir(os.path.join(problemDirName, inputFactsFolder)):
-        if remove_suffix(file, '.facts') in toInsert.keys() | toDelete.keys():
-            continue
-        else:
-            shutil.copyfile(os.path.join(problemDirName, inputFactsFolder, file), os.path.join(problemDirName, outputFactsFolder, file))
+        if file.endswith('.facts'):
+            if remove_suffix(file, '.facts') in toInsert.keys() | toDelete.keys():
+                continue
+            else:
+                shutil.copyfile(os.path.join(problemDirName, inputFactsFolder, file), os.path.join(problemDirName, outputFactsFolder, file))
 
     endTime = time.time()
     logTime('applyDiffToInput', endTime - startTime)

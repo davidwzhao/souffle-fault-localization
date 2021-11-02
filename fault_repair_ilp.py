@@ -156,12 +156,13 @@ def tuple_exists(souffle_instance, tup):
     # set depth to 1, then try to compute provenance, then check whether tuple
     # is found
 
-    faultbase.execSouffleCmd(souffle_instance, 'setdepth 2')
+    faultbase.execSouffleCmd(souffle_instance, 'setdepth 1')
     tree = faultbase.getAllProvJson(souffle_instance, tup)
 
     tuple_exists = True
     if 'axiom' in tree and tree['axiom'] == 'Tuple not found':
         tuple_exists = False
+
     faultbase.execSouffleCmd(souffle_instance, 'setdepth 10000')
 
     return tuple_exists
@@ -192,6 +193,8 @@ def repair_faults(souffle_instance, faults):
         total_current_repair = set()
         while True:
             (current_trees, current_repair) = repair_current_level_faults(souffle_instance, faults)
+
+            # print("current repair:", current_repair)
 
             if len(current_repair) == 0:
                 # we have no more proof trees!
