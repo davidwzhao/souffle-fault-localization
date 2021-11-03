@@ -26,6 +26,7 @@ def construct_repair_ilp(trees):
 
     # maintain a dict of vars so we don't create a new LP var each time
     ilp_vars = {}
+    current_ilp_var_num = 0
 
     # maintain a set of edb_tuples, we need these for the ILP optimization target
     edb_tuples = set()
@@ -33,6 +34,7 @@ def construct_repair_ilp(trees):
     def walk_prov_tree(p):
         nonlocal repair_ilp
         nonlocal ilp_vars
+        nonlocal current_ilp_var_num
         nonlocal edb_tuples
 
         if 'axiom' in p:
@@ -63,12 +65,14 @@ def construct_repair_ilp(trees):
 
                 # create variables for head and body tuples
                 if head_tup not in ilp_vars:
-                    head_tup_var = pulp.LpVariable(head_tup, lowBound=0, upBound=1, cat='Integer')
+                    head_tup_var = pulp.LpVariable('var_' + str(current_ilp_var_num), lowBound=0, upBound=1, cat='Integer')
+                    current_ilp_var_num += 1
                     ilp_vars[head_tup] = head_tup_var
 
                 for body_tup in current_body_tuples:
                     if body_tup not in ilp_vars:
-                        body_tup_var = pulp.LpVariable(body_tup, lowBound=0, upBound=1, cat='Integer')
+                        body_tup_var = pulp.LpVariable('var_' + str(current_ilp_var_num), lowBound=0, upBound=1, cat='Integer')
+                        current_ilp_var_num += 1
                         ilp_vars[body_tup] = body_tup_var
 
                 # create constraint!
@@ -251,6 +255,7 @@ def repair_faults(souffle_instance, faults):
         faults_fixed = True
         for f in faults:
             if tuple_exists(souffle_instance, f):
+                # print("tuple", f, "not repaired")
                 faults_fixed = False
 
         if faults_fixed:
