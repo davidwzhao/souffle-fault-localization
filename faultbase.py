@@ -103,7 +103,7 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
                 shutil.copyfile(os.path.join(problemDirName, inputFactsFolder, file), os.path.join(problemDirName, outputFactsFolder, file))
 
     endTime = time.time()
-    logTime('applyDiffToInput', endTime - startTime)
+    # logTime('applyDiffToInput', endTime - startTime)
 
 def reverseDiffLine(line):
     t = line.split(' ', maxsplit=1)
@@ -129,7 +129,7 @@ def reverseDiff(problemDirName, diffFilename, outputDiffFilename):
                 outputDiffFile.write(reverseDiffLine(l))
 
     endTime = time.time()
-    logTime('reverseDiff', endTime - startTime)
+    # logTime('reverseDiff', endTime - startTime)
 
 
 ########################################################################################################################
@@ -180,7 +180,7 @@ def execSouffleCmd(souffle, cmd):
     response = response[:-1]
     ans = '\n'.join(response)
     endTime = time.time()
-    logTime('souffleCmd', endTime - startTime)
+    # logTime('souffleCmd', endTime - startTime)
     return ans
 
 def printSouffleTuple(relName, t):
@@ -248,19 +248,19 @@ def getOneTreeFromProvJson(provenance):
     return res
 
 def getAllProv(souffle, tupleStr):
-    startTime = time.time()
     p = getAllProvJson(souffle, tupleStr)
     tuples = getAllTreesFromProvJson(p)
-
-    endTime = time.time()
-    logTime('getAllProv', endTime - startTime)
 
     return tuples
 
 def getAllProvJson(souffle, tupleStr):
+    startTime = time.time()
     p = execSouffleCmd(souffle, 'explainall ' + tupleStr)
     p = json.loads(p)
     p = p['proof']
+
+    endTime = time.time()
+    logTime('getAllProv', endTime - startTime)
 
     return p
 

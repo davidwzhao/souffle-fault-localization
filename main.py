@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 
 import faultbase
 import fault_localize
@@ -93,6 +94,7 @@ def main():
     problem_dir = sys.argv[2]
     allow_user_interaction = len(sys.argv) > 3 and sys.argv[3] == '1'
 
+    initSouffleStart = time.time()
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
 
     # set up reverse souffle instance
@@ -107,6 +109,9 @@ def main():
 
     faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
     faultbase.execSouffleCmd(reverse_souffle_instance, 'storediffs')
+
+    initSouffleEnd = time.time()
+    faultbase.logTime("initialize_souffle", initSouffleEnd - initSouffleStart)
 
     # get faults
     faults = []

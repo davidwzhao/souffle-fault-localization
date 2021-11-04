@@ -7,6 +7,7 @@ import faultbase
 import collections
 import os
 import sys
+import time
 import pulp
 
 # The problem directory should contain:
@@ -191,6 +192,8 @@ def repair_faults(souffle_instance, faults):
     # the earlier levels. Therefore, we must repeat the process until we
     # actually find a full repair.
 
+    startTime = time.time()
+
     total_reversed_tuples = []
     total_trees = []
     while True:
@@ -232,6 +235,9 @@ def repair_faults(souffle_instance, faults):
 
             faultbase.execSouffleCmd(souffle_instance, 'commit')
 
+            endTime = time.time()
+            faultbase.logTime('repair_faults', endTime - startTime)
+
             return repair
 
         # Use current repair
@@ -267,5 +273,8 @@ def repair_faults(souffle_instance, faults):
                 faultbase.execSouffleCmd(souffle_instance, faultbase.reverseDiffLine(r))
 
             faultbase.execSouffleCmd(souffle_instance, 'commit')
+
+            endTime = time.time()
+            faultbase.logTime('repair_faults', endTime - startTime)
 
             return repair

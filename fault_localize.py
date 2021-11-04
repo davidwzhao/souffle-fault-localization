@@ -4,6 +4,8 @@
 
 import sys
 import os
+import time
+
 import faultbase
 
 # The problem directory should contain:
@@ -19,10 +21,14 @@ import faultbase
 
 # localize a set of faults from faults_file
 def localize_faults(souffle_instance, faults):
+    start = time.time()
     localization = set()
 
     for f in faults:
         localization.update(faultbase.getOneProv(souffle_instance, f))
+
+    end = time.time()
+    faultbase.logTime("localize_faults", end - start)
 
     return localization
 
