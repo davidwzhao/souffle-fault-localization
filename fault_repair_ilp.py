@@ -217,6 +217,9 @@ def repair_faults(souffle_instance, faults):
 
             faultbase.execSouffleCmd(souffle_instance, 'commit')
 
+        if len(total_trees) == 0:
+            return set()
+
         # Now, take trees and compute and solve an ILP
         (edb_tuples, ilp_vars, repair_ilp) = construct_repair_ilp(total_trees)
         repair = solve_repair_ilp(edb_tuples, ilp_vars, repair_ilp)
