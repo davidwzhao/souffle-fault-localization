@@ -1,6 +1,7 @@
 __pycache__
-*query
-*query.cpp
+*query*
+*query*.cpp
 *_reverse*
+*facts_current
 *.csv
 *.swp
