@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import collections
+import logging
 import os
 import sys
 
@@ -26,7 +27,10 @@ def delta_debugging(faults, missing_faults, updates):
 
     current_updates = updates
 
+    num_iterations = 0
+
     while True:
+        num_iterations += 1
         for diff_subset in breakIntoPieces(current_updates, divisions):
             # apply the current diff
             delta_debugging_base.applyDiffToInput(problem_dir, diff_subset, "facts", "facts_current")
@@ -53,6 +57,8 @@ def delta_debugging(faults, missing_faults, updates):
         divisions = min(len(current_updates), divisions * 2)
         if divisions == 0:
             break
+
+    logging.info("delta debugging took " + str(num_iterations) + " iterations")
 
     return current_updates
 

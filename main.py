@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import logging
 import os
 import sys
 import time
@@ -11,8 +12,10 @@ import fault_repair_ilp
 def localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
     # now do the localization algo!
     localizations = set()
+    num_iterations = 0
 
     while len(faults) > 0 or len(reverse_faults) > 0:
+        num_iterations += 1
         localizations.update(fault_localize.localize_faults(souffle_instance, faults))
 
         # now faults are processed, so reset faults
@@ -41,13 +44,17 @@ def localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
 
         localizations -= set([l for l in localizations if l[0] == '!'])
 
+    logging.info("localization took " + str(num_iterations) + " iterations")
+
     return localizations
 
 def repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
     # now do the localization algo!
     repairs = set()
+    num_iterations = 0
 
     while len(faults) > 0 or len(reverse_faults) > 0:
+        num_iterations += 1
         repairs.update(fault_repair_ilp.repair_faults(souffle_instance, faults))
 
         # now faults are processed, so reset faults
@@ -75,6 +82,8 @@ def repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults):
                 faults.append(tup)
 
         repairs -= set([l for l in repairs if l[0] == '!'])
+
+    logging.info("repair took " + str(num_iterations) + " iterations")
 
     return repairs
 
