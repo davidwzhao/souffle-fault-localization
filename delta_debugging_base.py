@@ -129,14 +129,18 @@ def loadRelation(filename):
 
 # check if a tuple exists in a relation
 def tuplesInRelation(filename, tups):
+    found = set()
+    rel = set()
     with open(filename, 'r') as f:
         for line in f:
             line = line.rstrip()
             tup = tuple(line.split('\t'))
+            rel.add(tup)
             if tup in tups:
-                return True
+                found.add(tup)
 
-    return False
+    result = set(tups) == found
+    return result
 
 ########################################################################################################################
 # Souffle functions
@@ -150,6 +154,8 @@ def initSouffle(problemDirName, souffleExecName, factsFolder = 'facts'):
                                stdin=subprocess.PIPE, \
                                stdout=subprocess.PIPE, \
                                universal_newlines=True)
+
+    souffle.wait()
 
 def printSouffleTuple(relName, t):
     t = tuple( f'"{x}"' for x in t )
