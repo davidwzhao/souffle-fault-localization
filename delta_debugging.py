@@ -24,12 +24,14 @@ def is_bug_reproduced(faults, missing_faults):
     bug_reproduced = True
 
     for rel in faults.keys():
-        if not delta_debugging_base.tuplesInRelation(os.path.join(problem_dir, rel + '.csv'), faults[rel]):
+        rel_file = rel.replace("mainAnalysis_", "")
+        if not delta_debugging_base.tuplesInRelation(os.path.join(problem_dir, "output_temp", rel_file + '.csv'), faults[rel]):
             bug_reproduced = False
             break
 
     for rel in missing_faults.keys():
-        if delta_debugging_base.tuplesInRelation(os.path.join(problem_dir, rel + '.csv'), missing_faults[rel]):
+        rel_file = rel.replace("mainAnalysis_", "")
+        if delta_debugging_base.tuplesInRelation(os.path.join(problem_dir, "output_temp", rel_file + '.csv'), missing_faults[rel]):
             bug_reproduced = False
             break
 
@@ -47,11 +49,11 @@ def delta_debugging(faults, missing_faults, updates):
     while True:
         num_iterations += 1
         all_pass = True
-
+        print("starting iteration", num_iterations)
         for diff_subset in breakIntoPieces(current_updates, divisions):
             # apply the current diff
             delta_debugging_base.applyDiffToInput(problem_dir, diff_subset, "facts", "facts_current")
-            delta_debugging_base.initSouffle(problem_dir, "query-batch", "facts_current")
+            delta_debugging_base.initSouffle(problem_dir, "computation", "facts_current")
 
             bug_reproduced = is_bug_reproduced(faults, missing_faults)
 
@@ -71,7 +73,7 @@ def delta_debugging(faults, missing_faults, updates):
 
                 # apply the current diff
                 delta_debugging_base.applyDiffToInput(problem_dir, current_diff_subset, "facts", "facts_current")
-                delta_debugging_base.initSouffle(problem_dir, "query-batch", "facts_current")
+                delta_debugging_base.initSouffle(problem_dir, "computation", "facts_current")
 
                 bug_reproduced = is_bug_reproduced(faults, missing_faults)
 
@@ -115,8 +117,8 @@ def main():
             if kind == 'missing':
                 reverse_faults[tup[0]].append(tup[1])
 
-    print("faults:", faults)
-    print("reverse faults:", reverse_faults)
+    print("faults:", faults, len(faults))
+    print("reverse faults:", reverse_faults, len(reverse_faults))
 
     # get list of updates
     updates = []

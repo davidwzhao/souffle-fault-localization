@@ -94,6 +94,9 @@ def construct_repair_ilp(trees):
 
     for tree in trees:
         walk_prov_tree(tree)
+        if 'premises' not in tree:
+            print("tree:", tree)
+
         fault_constraint = (ilp_vars[tree['premises']] == 0)
 
         # print("fault constraint:", fault_constraint)

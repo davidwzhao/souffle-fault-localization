@@ -105,19 +105,29 @@ def main():
 
     initSouffleStart = time.time()
     souffle_instance = faultbase.initIncSouffle(problem_dir, "query")
+    # print("finished initializing souffle, about to initialize reverse souffle")
 
     # set up reverse souffle instance
     faultbase.applyDiffToInput(problem_dir, 'update.in', 'facts', 'facts_reverse')
+    # print("finished applying diff to input")
     faultbase.reverseDiff(problem_dir, 'update.in', 'update_reverse.in')
+    # print("finished reversing original diff")
 
     reverse_souffle_instance = faultbase.initIncSouffle(problem_dir, "query", 'facts_reverse')
+    # print("finished initializing reverse souffle")
 
     # initialize souffle instance updates
     faultbase.apply_update(souffle_instance, os.path.join(problem_dir, 'update.in'))
+    # print("finished executing forwards update")
     faultbase.execSouffleCmd(souffle_instance, 'storediffs')
+    # print("  finished storing diffs")
 
     faultbase.apply_update(reverse_souffle_instance, os.path.join(problem_dir, 'update_reverse.in'))
+    # print("finished executing reverse update")
     faultbase.execSouffleCmd(reverse_souffle_instance, 'storediffs')
+    # print("  finished storing diffs")
+
+    print("finished initialization!")
 
     initSouffleEnd = time.time()
     faultbase.logTime("initialize_souffle", initSouffleEnd - initSouffleStart)
@@ -138,7 +148,8 @@ def main():
                 reverse_faults.append(tup)
 
     print("faults: ", faults, ", reverse_faults: ", reverse_faults)
-    
+
+    localize_start = time.time()
     result = set()
     if mode == 'localize':
         result = localize(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
@@ -146,6 +157,9 @@ def main():
         result = repair(souffle_instance, reverse_souffle_instance, faults, reverse_faults)
     else:
         print("Mode is 'localize' or 'repair'")
+
+    localize_end = time.time()
+    faultbase.logTime("localize_repair_faults", localize_end - localize_start)
 
     print(result)
 

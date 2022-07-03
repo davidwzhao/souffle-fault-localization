@@ -55,11 +55,32 @@ def remove_suffix(self: str, suffix: str) -> str:
 ########################################################################################################################
 # Tuple input/output utilities
 
+def get_input_relation_names(dl_file):
+    filename_to_relation = {}
+    relation_to_filename = {}
+
+    # input_pattern = re.compile('\.decl (\w+)\([^\)]*\)\s+input')
+    input_pattern = re.compile('\.input (\w+)\(.*filename=\"([a-zA-Z0-9_\.]+)\".*\)\s+')
+    # input_pattern = re.compile('\.input (\w+)\([^\)]\)')
+    with open(dl_file, 'r') as f:
+        for l in f:
+            match = input_pattern.match(l)
+            if match:
+                rel_name = match.group(1)
+                file_name = match.group(2)
+
+                filename_to_relation[file_name] = rel_name
+                relation_to_filename[rel_name] = file_name
+
+    return (filename_to_relation, relation_to_filename)
+
 # this applies a diff up to the first 'commit'
 def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFactsFolder):
     startTime = time.time()
     toInsert = collections.defaultdict(set)
     toDelete = collections.defaultdict(set)
+
+    (filename_to_relation, relation_to_filename) = get_input_relation_names(os.path.join(problemDirName, "computation-no-records.dl"))
 
     with open(os.path.join(problemDirName, diffFilename), 'r') as diffFile:
         for l in diffFile:
@@ -71,19 +92,33 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
             (command, tup) = tuple(l.split(' ', maxsplit=1))
             tup = parseSouffleTuple(tup)
 
+            rel = tup[0]
+            if rel in relation_to_filename:
+                rel = relation_to_filename[rel]
+            else:
+                rel = rel + '.facts'
+            # if rel.startswith('_'):
+            #     rel = rel[1:]
+            # rel = rel.replace("_", "-")
+            # print(rel)
+
             # create tab-separated version of tuple and insert into appropriate
             # set
             if command == 'remove':
-                toDelete[tup[0]].add("\t".join(tup[1]))
+                toDelete[rel].add("\t".join(tup[1]))
             elif command == 'insert':
-                toInsert[tup[0]].add("\t".join(tup[1]))
+                toInsert[rel].add("\t".join(tup[1]))
 
     os.makedirs(os.path.join(problemDirName, outputFactsFolder), exist_ok=True)
 
     # go through each fact file and insert/delete as appropriate
     for rel in toInsert.keys() | toDelete.keys():
-        with open(os.path.join(problemDirName, inputFactsFolder, rel + '.facts'), 'r') as f:
-            with open(os.path.join(problemDirName, outputFactsFolder, rel + '.facts'), 'w') as f_new:
+        if not os.path.exists(os.path.join(problemDirName, inputFactsFolder, rel)):
+            logging.debug("file " + str(rel) + " doesn't exist")
+            continue
+
+        with open(os.path.join(problemDirName, inputFactsFolder, rel), 'r') as f:
+            with open(os.path.join(problemDirName, outputFactsFolder, rel), 'w') as f_new:
                 for l in f:
                     if l.rstrip() in toDelete[rel]:
                         continue
@@ -96,8 +131,9 @@ def applyDiffToInput(problemDirName, diffFilename, inputFactsFolder, outputFacts
 
     # copy all files that do not have a diff
     for file in os.listdir(os.path.join(problemDirName, inputFactsFolder)):
-        if file.endswith('.facts'):
-            if remove_suffix(file, '.facts') in toInsert.keys() | toDelete.keys():
+        if file.endswith('.facts') or file.endswith('.txt'):
+            # if remove_suffix(file, '.facts') in toInsert.keys() | toDelete.keys():
+            if file in toInsert.keys() | toDelete.keys():
                 continue
             else:
                 shutil.copyfile(os.path.join(problemDirName, inputFactsFolder, file), os.path.join(problemDirName, outputFactsFolder, file))
@@ -140,7 +176,7 @@ def initIncSouffle(problemDirName, souffleExecName, factsFolder = 'facts'):
     # for facts in [x for x in os.listdir(problemDirName) if x.endswith('.facts')]:
     #     shutil.copyfile(os.path.join(problemDirName, facts), os.path.join(problemDirName, facts + '.orig'))
 
-    souffle = subprocess.Popen([ f'{problemDirName}/{souffleExecName}', '-F', os.path.join(problemDirName, factsFolder), '-D', problemDirName ], \
+    souffle = subprocess.Popen([ f'{problemDirName}/{souffleExecName}', '-F', os.path.join(problemDirName, factsFolder), '-D', os.path.join(problemDirName, 'output_temp') ], \
                                stdin=subprocess.PIPE, \
                                stdout=subprocess.PIPE, \
                                universal_newlines=True)
@@ -190,10 +226,11 @@ def printSouffleTuple(relName, t):
 
 def parseSouffleTuple(string):
     startTime = time.time()
-    xs = string.split('(')
-    relName, xs = [ x.strip() for x in xs ]
-    xs = xs.split(')')[0].strip()
-    xs = [ x.strip() for x in xs.split(',') ]
+    xs = string.split('(', maxsplit=1)
+    relName, xs = [ x for x in xs ]
+    # xs = xs.split(')')[0].strip()
+    xs = xs.rstrip(')')
+    xs = [ x.strip() for x in xs.split(', ') ]
     xs = tuple([ x[1:-1].strip() if x.startswith('"') and x.endswith('"') else x for x in xs ])
     ans = (relName, xs)
     endTime = time.time()
